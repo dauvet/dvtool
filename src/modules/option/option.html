@@ -1,0 +1,16 @@
+
+<div class="grid gap-3">
+  <div>
+    <div class="text-sm">Feature Flags</div>
+    <div class="flex gap-2 items-center mt-2">
+      <label class="flex gap-2 items-center"><input id="ff-tele" type="checkbox"> <span>Enable telemetry</span></label>
+      <label class="flex gap-2 items-center"><input id="ff-dry" type="checkbox"> <span>Dry-run cleaner</span></label>
+    </div>
+  </div>
+  <hr/>
+  <div class="flex gap-2">
+    <button id="export" class="btn secondary">Export Settings</button>
+    <button id="import" class="btn">Import Settings</button>
+  </div>
+  <textarea id="json" class="input" style="height:160px" placeholder="Settings JSON appears here on export, or paste to import..."></textarea>
+</div>

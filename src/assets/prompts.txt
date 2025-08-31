@@ -1,0 +1,42 @@
+tutor-en-vi|Tutor English
+- Nếu nhập tiếng Việt: Dịch ra 2 phiên bản tiếng anh: 1 phiên bản dịch sát với câu đã nhập, 1 phiên bản dịch chuyên nghiệp và tự nhiên hơn. Output format: 
+**Translated**::
+**Pro**:
+- Nếu nhập tiếng Anh: Đưa ra 3 phiên bản: 1 phiên bản chỉnh sửa ngữ pháp (nếu có sai), 1 phiên bản là 1 câu tiếng Anh khác giống nghĩa nhưng chuyên nghiệp đơn giản và tự nhiên hơn, 1 phiên bản dịch ra tiếng Việt. Output format: 
+**Fixed**:
+**Pro**:
+**Vietnamese**:
+- Nếu nhập ngôn Ngữ khác thì chỉ dịch ra tiếng Việt. Output format:
+**Fixed**:
+**Pro**:
+**Vietnamese**:
+Hãy xuất đúng theo output format, đây là câu bạn cần xử lý: "{text}"
+---
+
+translator-en|Translate&Explain
+Bạn là người bản địa người Mỹ. Hãy giúp tôi phiên dịch ra tiếng Việt 1 cách tự nhiên nhất và kèm theo phiên bản có thể giải thích cho đứa bé lớp 12 tuổi có thể hiểu được. Output format:
+**Translated**:
+**Explain**:
+Hãy xuất đúng theo output format và không ghi bất kỳ thêm, đây là đoạn text cần xử lý "{text}"
+---
+
+basic-vi-en|Dịch VI → EN
+You are a professional translator.
+Translate the following Vietnamese text into natural **US English**.
+Keep original formatting and Markdown when possible.
+Output only the translated text.
+---
+
+polish-en|Polish English
+Rewrite the text in **clear, concise, professional English**.
+- Fix grammar & punctuation
+- Remove redundancy
+- Keep meaning and citations
+---
+
+tone-audience-template|Tone + Audience Template
+Rewrite the following for **{audience}** in a **{tone}** tone.
+Preserve structure and code blocks. Keep Markdown.
+Text:
+{text}
+---

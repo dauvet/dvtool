@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Modular Tools (No CDN)",
+  "version": "1.1.0",
+  "description": "Modular Chrome/Edge extension with Account, Domain Cleaner, and Options modules. Plain JS, no external URLs.",
+  "action": {
+    "default_popup": "src/pages/popup/index.html"
+  },
+  "options_page": "src/pages/options/index.html",
+  "background": {
+    "service_worker": "src/background/service-worker.js",
+    "type": "module"
+  },
+  "permissions": [
+    "storage",
+    "cookies",
+    "browsingData",
+    "tabs",
+    "identity"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "icons": {
+    "16": "src/assets/icons/icon16.png",
+    "48": "src/assets/icons/icon48.png",
+    "128": "src/assets/icons/icon128.png"
+  }
+}

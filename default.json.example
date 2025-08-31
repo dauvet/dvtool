@@ -1,0 +1,19 @@
+{
+  "supabase": {
+    "url": "https://xxx.supabase.co",
+    "anonKey": "",
+    "schema": "public",
+    "tableSettings": "tool_settings",
+    "authRedirectUrl": "https://xxxx.chromiumapp.org/",
+    "projectId": ""
+  },
+  "gemini": {
+    "apiBase": "https://generativelanguage.googleapis.com",
+    "apiKey": "xxx",
+    "model": "gemini-2.0-flash"
+  },
+  "features": {
+    "enableTelemetry": false,
+    "enableDryRunCleaner": true
+  }
+}

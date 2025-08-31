@@ -1,0 +1,1 @@
+import { deepMerge } from '../lib/util.js';let defaultsCache=null;export async function loadDefaults(){if(defaultsCache)return defaultsCache;const url=chrome.runtime.getURL('default.json');const res=await fetch(url);defaultsCache=await res.json();return defaultsCache;}export async function mergeWithSaved(saved){const base=await loadDefaults();return deepMerge(base,saved||{});}

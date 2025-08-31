@@ -1,0 +1,1 @@
+export const bus=(()=>{const m=new Map();return{on(t,f){if(!m.has(t))m.set(t,new Set());m.get(t).add(f);return()=>m.get(t).delete(f)},emit(t,p){(m.get(t)||[]).forEach(fn=>{try{fn(p)}catch(e){console.error('bus handler error',e)}})}}})();

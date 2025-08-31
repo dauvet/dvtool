@@ -1,0 +1,1 @@
+const DEFAULT={settings:null,user:null};export const state={data:structuredClone(DEFAULT),set(p,v){const a=p.split('.');let c=this.data;for(let i=0;i<a.length-1;i++){if(!c[a[i]])c[a[i]]={};c=c[a[i]]}c[a[a.length-1]]=v},get(p){return p.split('.').reduce((acc,x)=>(acc?acc[x]:undefined),this.data)},reset(){this.data=structuredClone(DEFAULT)}};

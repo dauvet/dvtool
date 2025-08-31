@@ -1,0 +1,14 @@
+
+<div class="grid gap-3">
+  <div class="text-sm text-sub">Clear cookies & site data for a domain. Confirm before executing.</div>
+  <div class="grid gap-2">
+    <input id="domain" class="input" placeholder="example.com" />
+    <select id="domains" class="input"></select>
+  </div>
+  <div class="flex gap-2">
+    <button id="dry" class="btn secondary">Dry Run</button>
+    <button id="clear" class="btn">Confirm & Clear</button>
+  </div>
+  <pre id="out" class="bg-muted p-2 rounded text-xs" style="white-space:pre-wrap;overflow:auto;max-height:200px"></pre>
+  <small class="text-sub">Hint: The dropdown lists unique domains from all open tabs.</small>
+</div>

@@ -1,0 +1,166 @@
+<div class="translator">
+  <style>
+    /* ===== Scoped layout only for Translator ===== */
+    .translator { display:grid; gap:12px; max-width:100%; }
+    .translator .section { display:grid; gap:8px; max-width:100%; }
+    .translator .grid-auto { display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:8px; }
+
+    /* Chips row (tone/audience) */
+    .translator .chips { display:flex; flex-wrap:wrap; gap:8px; }
+    .translator .chip{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:4px 10px; border-radius:999px;
+      background:#1f2937; border:1px solid #374151; color:#e5e7eb;
+      font-size:12px; line-height:1; cursor:pointer; user-select:none;
+    }
+    .translator .chip:hover{ filter:brightness(1.08); }
+    .translator .chip.active{
+      border-color:rgba(34,211,238,.75);
+      box-shadow:0 0 0 2px rgba(34,211,238,.25) inset, 0 0 0 1px rgba(34,211,238,.35);
+      background:linear-gradient(180deg,#0f2530,#0b1b23);
+    }
+
+    /* Icon buttons */
+    .translator .icon-row{ display:flex; flex-wrap:wrap; gap:8px; }
+    .translator .icon-btn{
+      width:36px; height:36px; border-radius:10px;
+      display:inline-flex; align-items:center; justify-content:center;
+      background:#1f2937; border:1px solid #374151; color:#e5e7eb;
+      cursor:pointer; padding:0;
+    }
+    .translator .icon-btn:hover{ filter:brightness(1.08); }
+    .translator .icon-btn .ic{ width:18px; height:18px; display:block; }
+    .translator .icon-btn.sm{ width:28px; height:28px; border-radius:8px; }
+    .translator .icon-btn.danger{ background:#3b1f20; border-color:#5b3032; color:#fca5a5; }
+
+    /* prevent overflow everywhere */
+    .translator .card,
+    .translator .input,
+    .translator textarea.input,
+    .translator md-viewer,
+    .translator .result { max-width:100%; width:100%; }
+    .translator .input, .translator textarea.input { word-break:break-word; overflow-wrap:anywhere; }
+    .translator md-viewer, .translator .summary { word-break:break-word; overflow-wrap:anywhere; }
+    .translator pre { white-space:pre-wrap; max-width:100%; overflow:auto; }
+    .translator code { white-space:pre-wrap; }
+    .translator img, .translator table { max-width:100%; height:auto; }
+    .translator .card { overflow:hidden; }
+
+    /* two-line clamp for history summary */
+    .translator .clamp-2{
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+    }
+
+    /* History header layout: input full row + icon row */
+    .translator .history-head{ display:grid; gap:8px; }
+    .translator .history-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+    .translator .search-wrap{ display:flex; gap:8px; align-items:center; }
+    .translator .search-wrap .input{ flex:1 1 auto; }
+
+    /* Collapsible settings */
+    .translator .collapser{ display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; }
+    .translator .chev{ transition: transform .2s ease; }
+    .translator .chev.rot{ transform: rotate(90deg); }
+    .translator .panel{ display:none; margin-top:8px; padding:10px; border:1px dashed #2a3a56; border-radius:10px; background:#0a1425; }
+  </style>
+
+  <!-- Text input (giữ phía trên) -->
+  <div class="section">
+    <div class="text-sm mb-1">
+      Text
+      <span class="text-xs text-sub">Enter = Submit • Ctrl+Enter = newline • Ctrl+L focus input • Ctrl+K search history</span>
+    </div>
+    <textarea id="text" class="input" style="height:140px" placeholder="Nhập văn bản cần xử lý..."></textarea>
+  </div>
+
+  <!-- Actions (icon buttons) -->
+  <div class="section">
+    <div class="icon-row">
+      <button id="submit" class="icon-btn" title="Submit" aria-label="Submit">
+        <svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+      </button>
+      <button id="clear" class="icon-btn" title="Clear input & output" aria-label="Clear">
+        <svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1z"/></svg>
+      </button>
+      <button id="copyOut" class="icon-btn" title="Copy output" aria-label="Copy output">
+        <svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v16h13a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 18H8V7h11v16z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Output -->
+  <div class="section">
+    <div class="text-sm mb-1">Result</div>
+    <div class="card result" style="max-height:240px;overflow:auto">
+      <md-viewer id="output"></md-viewer>
+    </div>
+  </div>
+
+  <!-- Collapsible Settings (mặc định đóng) -->
+  <div class="section">
+    <div class="collapser" id="advToggle">
+      <span class="chev">▶</span>
+      <span class="text-sm">Prompt Settings</span>
+      <span class="text-xs text-sub">(Tone, Audience, Instructor template, Use custom)</span>
+    </div>
+    <div class="panel" id="advPanel">
+
+      <!-- Tone / Audience -->
+      <div class="text-sm">Tone</div>
+      <div class="chips">
+        <button class="chip tone" data-tone="Neutral">Neutral</button>
+        <button class="chip tone" data-tone="Formal">Formal</button>
+        <button class="chip tone" data-tone="Marketing">Marketing</button>
+        <button class="chip tone" data-tone="Legal">Legal</button>
+      </div>
+
+      <div class="text-sm mt-2">Audience</div>
+      <div class="chips">
+        <button class="chip audience" data-audience="general">General</button>
+        <button class="chip audience" data-audience="dev">Dev</button>
+        <button class="chip audience" data-audience="end-user">End-user</button>
+        <button class="chip audience" data-audience="exec">Exec</button>
+      </div>
+
+      <!-- Instructor -->
+      <div class="text-sm mb-1" style="margin-top:10px">Instructor (template hỗ trợ {text}, {tone}, {audience})</div>
+      <div class="grid-auto">
+        <select id="preset" class="input"></select>
+        <button id="reloadPrompts" class="icon-btn" title="Reload prompts" aria-label="Reload prompts">
+          <svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M12 6v3l4-4-4-4v3c-4.97 0-9 4.03-9 9 0 1.64.44 3.18 1.2 4.51l1.67-1A7 7 0 0 1 5 12c0-3.86 3.14-7 7-7zM20.8 7.49l-1.67 1A7 7 0 0 1 19 12c0 3.86-3.14 7-7 7v-3l-4 4 4 4v-3c4.97 0 9-4.03 9-9 0-1.64-.44-3.18-1.2-4.51z"/></svg>
+        </button>
+        <label class="chip" style="justify-content:flex-start; gap:8px;">
+          <input type="checkbox" id="useCustom"> <span>Use custom</span>
+        </label>
+      </div>
+      <textarea id="custom" class="input" style="height:100px" placeholder="Ví dụ: 'Rewrite for {audience} with a {tone} tone. Keep structure. Text: {text}'"></textarea>
+    </div>
+  </div>
+
+  <!-- History + Search -->
+  <div class="section">
+    <div class="text-sm mb-1">History</div>
+
+    <div class="history-head">
+      <div class="search-wrap">
+        <input id="historySearch" class="input" placeholder="Search history...">
+        <button id="historyClearX" class="icon-btn" title="Clear search" aria-label="Clear search">
+          <svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </div>
+      <div class="history-actions">
+        <button id="exportHistory" class="icon-btn" title="Export history" aria-label="Export history">
+          <svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M5 20h14v-2H5v2zm7-18l-5 5h3v4h4V7h3l-5-5z"/></svg>
+        </button>
+        <button id="clearHistory" class="icon-btn danger" title="Clear all history" aria-label="Clear all history">
+          <svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M9 3v1H4v2h16V4h-5V3H9m1 6v9h2V9h-2m-4 0v9h2V9H6m8 0v9h2V9h-2z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div id="history" class="card" style="max-height:200px;overflow:auto"></div>
+  </div>
+</div>

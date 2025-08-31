@@ -1,0 +1,1 @@
+export function toast(msg,timeout=2200){const el=document.createElement('div');el.className='toast';el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),timeout);}

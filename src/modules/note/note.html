@@ -1,0 +1,64 @@
+<div class="note">
+  <style>
+    .note{display:grid;gap:12px;max-width:100%}
+    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .icon-btn{width:36px;height:36px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;background:#1f2937;border:1px solid #374151;color:#e5e7eb;cursor:pointer;padding:0}
+    .icon-btn:hover{filter:brightness(1.08)}
+    .input{width:100%;max-width:100%;background:#0b1220;border:1px solid #23304a;color:#e5e7eb;padding:.5rem .75rem;border-radius:.5rem;outline:none}
+    .input:focus{border-color:#22d3ee;box-shadow:0 0 0 2px rgba(34,211,238,.15)}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:50}
+    .modal{width:min(820px,96vw);max-height:90vh;background:#0b1220;border:1px solid #23304a;border-radius:12px;padding:12px;display:grid;grid-template-rows:auto auto 1fr auto;gap:8px}
+    .modal .footer{display:flex;align-items:center;justify-content:space-between}
+    /* Wrap trong editor để chống scroll ngang */
+    .modal, .modal * { max-width:100%; word-break:break-word; overflow-wrap:anywhere; }
+  </style>
+
+  <!-- Search + Actions -->
+  <div class="row">
+    <input id="search" class="input" placeholder="Search notes (realtime)…" />
+    <button id="add" class="icon-btn" title="Add note" aria-label="Add note">+</button>
+    <button id="toggle" class="icon-btn" title="Toggle layout" aria-label="Toggle layout">⇆</button>
+    <button id="exportAll" class="icon-btn" title="Export all (ZIP)" aria-label="Export all">⬇️</button>
+  </div>
+
+  <!-- Tags Filter -->
+  <tags-bar id="tags"></tags-bar>
+
+  <!-- Notes List -->
+  <notes-list id="list" mode="column"></notes-list>
+
+  <!-- Editor Modal -->
+  <div id="editorModal" class="modal-backdrop">
+    <div class="modal">
+      <!-- Editor toolbar (right aligned) -->
+      <div class="row" style="justify-content:flex-end">
+        <button id="exportOne" class="icon-btn" title="Export this note (HTML/MD)">⬇️</button>
+      </div>
+      <!-- Tag input inside editor -->
+      <tag-input id="tagInput"></tag-input>
+      <!-- Editor -->
+      <rte-editor id="editor"></rte-editor>
+      <div class="footer">
+        <div class="left text-xs text-sub">Last update: <span id="lastUpdate">—</span></div>
+        <div class="row">
+          <button id="closeModal" class="icon-btn" title="Close">✕</button>
+          <button id="saveNote" class="icon-btn" title="Save">💾</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Assign Tags Modal (from card action) -->
+  <div id="tagsModal" class="modal-backdrop">
+    <div class="modal" style="grid-template-rows: auto auto auto">
+      <div class="row" style="justify-content:space-between">
+        <div class="text-sm">Edit Tags</div>
+        <button id="closeTags" class="icon-btn">✕</button>
+      </div>
+      <tag-input id="tagModalInput"></tag-input>
+      <div class="row" style="justify-content:flex-end">
+        <button id="saveTags" class="icon-btn" title="Save">💾</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="../../styles/mini-tailwind.css">
+    <title>Modular Tools</title>
+    <style> body{width: 420px} </style>
+  </head>
+  <body>
+    <div class="p-3">
+      <div class="flex items-center justify-between mb-2">
+        <div class="text-lg">Modular Tools</div>
+        <span class="badge"><span>MV3</span><span>Plain JS</span></span>
+      </div>
+
+      <!-- Chỉ còn 2 tab: Domain Cleaner & Settings (gộp Account + Options) -->
+      <ui-tabs id="tabs" active="0">
+        <button>Domain Cleaner</button>
+        <button>Translator</button>
+        <button>Node</button>
+        <button>Settings</button>
+      </ui-tabs>
+
+      <div id="view" class="mt-3 card"></div>
+      <div class="mt-2 text-xs text-sub">Tip: Switch tabs with <span class="kbd">Ctrl</span> + <span class="kbd">1/2</span></div>
+    </div>
+
+    <script type="module" src="./index.js"></script>
+  </body>
+</html>
