@@ -16,10 +16,19 @@
     "cookies",
     "browsingData",
     "tabs",
-    "identity"
+    "identity",
+    "contextMenus",
+    "scripting"
   ],
   "host_permissions": [
     "<all_urls>"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content/analyze-overlay.js"],
+      "run_at": "document_start"
+    }
   ],
   "icons": {
     "16": "src/assets/icons/icon16.png",

@@ -1,6 +1,6 @@
-// src/modules/translator/translator.js
-// Bổ sung Collapsible Settings đặt dưới Result (default collapsed)
-// Giữ nguyên logic submit, history, tone/audience, prompts loader…
+// src/pages/popup/modules/translator/translator.js
+// Null-safe cho settings.get() để tránh "Cannot read properties of null (reading 'gemini')"
+// + Giữ các tính năng trước đó (Analyze Preset, history, hotkeys, ...)
 
 import '../../components/md-viewer.js';
 import { generateWithGemini } from '../../services/gemini.service.js';
@@ -11,16 +11,29 @@ const PROMPTS_URL = '/src/assets/prompts.txt';
 
 function nowIso(){ return new Date().toISOString(); }
 
-function getState(){
-  const st = settings.get();
-  st.translator = st.translator || {
-    useCustom: false,
-    customInstructor: '',
-    selectedPresetId: '',
-    tone: 'Neutral',
-    audience: 'general'
+/** Luôn trả về object, không bao giờ null/undefined */
+function getSettingsSafe() {
+  const s = settings.get?.() ?? {};
+  // Clone nông để chắc chắn có object con
+  return {
+    ...s,
+    translator: {
+      useCustom: false,
+      customInstructor: '',
+      selectedPresetId: '',
+      selectedAnalyzePresetId: '',
+      tone: 'Neutral',
+      audience: 'general',
+      ...(s?.translator || {})
+    },
+    supabase: { ...(s?.supabase || {}) },
+    gemini: { ...(s?.gemini || {}) }
   };
-  return st;
+}
+
+function getState(){
+  // Lấy state một lần, đảm bảo có translator default
+  return getSettingsSafe();
 }
 
 /** Load prompts with multiline Markdown support (--- separated) + legacy single-line */
@@ -75,6 +88,7 @@ async function loadPrompts(){
 }
 
 function renderPresets(select, presets, selectedId){
+  if (!select) return;
   select.innerHTML = `<option value="">-- Choose an instructor --</option>` +
     presets.map(p => `<option value="${p.id}" ${p.id===selectedId?'selected':''}>${p.label}</option>`).join('');
 }
@@ -133,7 +147,6 @@ function renderHistoryList(root, container, items){
   if(!items?.length){ container.innerHTML = '<small class="text-sub">No history yet.</small>'; return; }
   container.innerHTML = items.map(historyRow).join('');
 
-  // inject summaries safely
   const rows = Array.from(container.querySelectorAll('.summary'));
   rows.forEach((el, i)=>{
     const h = items[i];
@@ -141,7 +154,6 @@ function renderHistoryList(root, container, items){
     el.title = el.textContent;
   });
 
-  // actions
   container.querySelectorAll('.btn-load').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const id = btn.getAttribute('data-id');
@@ -160,8 +172,8 @@ function renderHistoryList(root, container, items){
       const id = btn.getAttribute('data-id');
       try{
         const { supa } = await import('../../services/supabase.service.js');
-        const st = settings.get();
-        supa.setConfig(st.supabase);
+        const stSafe = getSettingsSafe();
+        supa.setConfig(stSafe.supabase);
         await supa.restore();
         if(!supa.user){ toast('Please sign in to manage cloud history.'); return; }
         await supa.historyDelete(id);
@@ -178,8 +190,8 @@ function renderHistoryList(root, container, items){
 
 async function refreshHistoryUI(root, q=''){
   const { supa } = await import('../../services/supabase.service.js');
-  const st = settings.get();
-  supa.setConfig(st.supabase);
+  const stSafe = getSettingsSafe();
+  supa.setConfig(stSafe.supabase);
   await supa.restore();
 
   const list = supa.user ? await supa.historyList({ q, limit: 50 }) : [];
@@ -187,12 +199,10 @@ async function refreshHistoryUI(root, q=''){
   renderHistoryList(root, box, list);
 }
 
-/* debounce helper for realtime search */
 function debounce(fn, wait=250){
   let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), wait); };
 }
 
-/* Loading spinner for Submit button (icon-only) */
 function spinnerSvg(){
   return `
   <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
@@ -216,7 +226,6 @@ function setSubmitting(btn, on=true){
   }
 }
 
-/* Ensure the Result card is visible after rendering output */
 function ensureResultVisible(root){
   const card = root.querySelector('.card.result') || root.querySelector('.result');
   if(!card) return;
@@ -230,7 +239,6 @@ function attachHotkeys(root){
   const submit = root.querySelector('#submit');
 
   if (text) {
-    // Enter = submit (textarea), Ctrl+Enter = newline
     text.addEventListener('keydown', (ev)=>{
       if (ev.key === 'Enter' && ev.ctrlKey) {
         ev.preventDefault();
@@ -259,9 +267,9 @@ function attachHotkeys(root){
 }
 
 export async function init(root){
-  const st = getState();
+  const st = getState(); // luôn là object có translator/supabase/gemini
 
-  // Collapsible wiring (default collapsed)
+  // Collapsible (giữ nguyên)
   const advToggle = root.querySelector('#advToggle');
   const advPanel  = root.querySelector('#advPanel');
   const chev      = advToggle?.querySelector('.chev');
@@ -272,42 +280,55 @@ export async function init(root){
     chev?.classList.toggle('rot', !open);
   });
 
-  const presetSel     = root.querySelector('#preset');
-  const reloadPrompts = root.querySelector('#reloadPrompts');
-  const useCustom     = root.querySelector('#useCustom');
-  const custom        = root.querySelector('#custom');
-  const textEl        = root.querySelector('#text');
-  const submitBtn     = root.querySelector('#submit');
-  const clearBtn      = root.querySelector('#clear');
-  const copyOutBtn    = root.querySelector('#copyOut');
-  const outputEl      = root.querySelector('#output');
-  const exportBtn     = root.querySelector('#exportHistory');
-  const clearAllBtn   = root.querySelector('#clearHistory');
-  const historySearch = root.querySelector('#historySearch');
-  const historyClearX = root.querySelector('#historyClearX');
+  const presetSel       = root.querySelector('#preset');
+  const presetAnalyzeEl = root.querySelector('#presetAnalyze'); // Analyze Preset
+  const reloadPrompts   = root.querySelector('#reloadPrompts');
+  const useCustom       = root.querySelector('#useCustom');
+  const custom          = root.querySelector('#custom');
+  const textEl          = root.querySelector('#text');
+  const submitBtn       = root.querySelector('#submit');
+  const clearBtn        = root.querySelector('#clear');
+  const copyOutBtn      = root.querySelector('#copyOut');
+  const outputEl        = root.querySelector('#output');
+  const exportBtn       = root.querySelector('#exportHistory');
+  const clearAllBtn     = root.querySelector('#clearHistory');
+  const historySearch   = root.querySelector('#historySearch');
+  const historyClearX   = root.querySelector('#historyClearX');
 
-  // Tone & Audience chips
+  // Tone & Audience
   root.querySelectorAll('.tone').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
-      st.translator.tone = btn.dataset.tone;
-      await settings.save(st);
-      updatePresetButtonStates(root, st);
-      toast(`Tone: ${st.translator.tone}`);
+      const stSafe = getSettingsSafe();
+      stSafe.translator.tone = btn.dataset.tone;
+      await settings.save(stSafe);
+      updatePresetButtonStates(root, stSafe);
+      toast(`Tone: ${stSafe.translator.tone}`);
     });
   });
   root.querySelectorAll('.audience').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
-      st.translator.audience = btn.dataset.audience;
-      await settings.save(st);
-      updatePresetButtonStates(root, st);
-      toast(`Audience: ${st.translator.audience}`);
+      const stSafe = getSettingsSafe();
+      stSafe.translator.audience = btn.dataset.audience;
+      await settings.save(stSafe);
+      updatePresetButtonStates(root, stSafe);
+      toast(`Audience: ${stSafe.translator.audience}`);
     });
   });
   updatePresetButtonStates(root, st);
 
   // Load prompts
   let presets = await loadPrompts();
-  if (presetSel) renderPresets(presetSel, presets, st.translator.selectedPresetId);
+
+  // Migrate: nếu Analyze Preset chưa có mà preset thường đã chọn, kế thừa & lưu
+  if (!st.translator.selectedAnalyzePresetId && st.translator.selectedPresetId) {
+    const stSafe = getSettingsSafe();
+    stSafe.translator.selectedAnalyzePresetId = st.translator.selectedPresetId;
+    await settings.save(stSafe);
+    st.translator.selectedAnalyzePresetId = st.translator.selectedPresetId;
+  }
+
+  if (presetSel)       renderPresets(presetSel, presets, st.translator.selectedPresetId);
+  if (presetAnalyzeEl) renderPresets(presetAnalyzeEl, presets, st.translator.selectedAnalyzePresetId);
 
   // Restore custom template
   if (useCustom) useCustom.checked = !!st.translator.useCustom;
@@ -316,25 +337,45 @@ export async function init(root){
   syncCustomVisibility();
 
   useCustom?.addEventListener('change', async ()=>{
-    st.translator.useCustom = !!useCustom.checked;
-    await settings.save(st);
+    const stSafe = getSettingsSafe();
+    stSafe.translator.useCustom = !!useCustom.checked;
+    await settings.save(stSafe);
     syncCustomVisibility();
   });
 
   presetSel?.addEventListener('change', async ()=>{
-    st.translator.selectedPresetId = presetSel.value;
-    await settings.save(st);
+    const stSafe = getSettingsSafe();
+    stSafe.translator.selectedPresetId = presetSel.value;
+    await settings.save(stSafe);
+
+    // Nếu Analyze chưa set, auto bám theo lựa chọn mới
+    if (!stSafe.translator.selectedAnalyzePresetId && presetAnalyzeEl) {
+      stSafe.translator.selectedAnalyzePresetId = presetSel.value;
+      await settings.save(stSafe);
+      renderPresets(presetAnalyzeEl, presets, stSafe.translator.selectedAnalyzePresetId);
+    }
+  });
+
+  // Analyze Preset change
+  presetAnalyzeEl?.addEventListener('change', async ()=>{
+    const stSafe = getSettingsSafe();
+    stSafe.translator.selectedAnalyzePresetId = presetAnalyzeEl.value;
+    await settings.save(stSafe);
+    toast(`Analyze preset: ${presetAnalyzeEl.value || '(none)'}`);
   });
 
   reloadPrompts?.addEventListener('click', async ()=>{
     presets = await loadPrompts();
-    if (presetSel) renderPresets(presetSel, presets, st.translator.selectedPresetId);
+    const stSafe = getSettingsSafe();
+    if (presetSel)       renderPresets(presetSel, presets, stSafe.translator.selectedPresetId);
+    if (presetAnalyzeEl) renderPresets(presetAnalyzeEl, presets, stSafe.translator.selectedAnalyzePresetId);
     toast('Prompts reloaded.');
   });
 
   custom?.addEventListener('input', async ()=>{
-    st.translator.customInstructor = custom.value;
-    await settings.save(st);
+    const stSafe = getSettingsSafe();
+    stSafe.translator.customInstructor = custom.value || '';
+    await settings.save(stSafe);
   });
 
   clearBtn?.addEventListener('click', ()=>{
@@ -348,12 +389,15 @@ export async function init(root){
     navigator.clipboard.writeText(plain).then(()=> toast('Copied.'));
   });
 
+  // Export History (null-safe supabase)
   exportBtn?.addEventListener('click', async ()=>{
     try{
       const { supa } = await import('../../services/supabase.service.js');
-      const cfg = settings.get().supabase;
-      supa.setConfig(cfg); await supa.restore();
-      const list = supa.user ? await supa.historyList({ q: historySearch?.value.trim() || '', limit: 500 }) : [];
+      const stSafe = getSettingsSafe();
+      supa.setConfig(stSafe.supabase);
+      await supa.restore();
+      const q = historySearch?.value.trim() || '';
+      const list = supa.user ? await supa.historyList({ q, limit: 500 }) : [];
       const blob = new Blob([JSON.stringify(list, null, 2)], {type:'application/json'});
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -367,8 +411,9 @@ export async function init(root){
   clearAllBtn?.addEventListener('click', async ()=>{
     try{
       const { supa } = await import('../../services/supabase.service.js');
-      const cfg = settings.get().supabase;
-      supa.setConfig(cfg); await supa.restore();
+      const stSafe = getSettingsSafe();
+      supa.setConfig(stSafe.supabase);
+      await supa.restore();
       if(!supa.user){ toast('Please sign in first.'); return; }
       await supa.historyClear();
       await refreshHistoryUI(root, historySearch?.value.trim() || '');
@@ -378,7 +423,6 @@ export async function init(root){
     }
   });
 
-  // Realtime search (debounced)
   const doSearch = debounce(async ()=>{
     await refreshHistoryUI(root, historySearch?.value.trim() || '');
   }, 250);
@@ -390,45 +434,44 @@ export async function init(root){
     historySearch?.focus();
   });
 
-  // Initial history
   await refreshHistoryUI(root, '');
+  attachHotkeys(root);
 
   // Submit
   submitBtn?.addEventListener('click', async ()=>{
-    const instructorTemplate = (st.translator.useCustom && custom)
+    const stSafe = getSettingsSafe();
+
+    const instructorTemplate = (stSafe.translator.useCustom && custom)
       ? (custom.value || '')
-      : (presets.find(p => p.id === (presetSel?.value || ''))?.text || '');
+      : (presets.find(p => p.id === ( (document.querySelector('#preset')?.value) || stSafe.translator.selectedPresetId || '' ))?.text || '');
 
     const mainText = (textEl?.value || '').trim();
     if(!mainText){ toast('Nhập văn bản trước.'); return; }
 
     setSubmitting(submitBtn, true);
-
     try{
-      const tone = st.translator.tone || 'Neutral';
-      const audience = st.translator.audience || 'general';
+      const tone = stSafe.translator.tone || 'Neutral';
+      const audience = stSafe.translator.audience || 'general';
       const prompt = buildPrompt({ instructorTemplate, text: mainText, tone, audience });
 
       const { text: out } = await generateWithGemini({ instructor: '', text: prompt });
-
       if (outputEl) outputEl.content = out || '(empty response)';
-
-      // đảm bảo Result luôn hiện ra
       await new Promise(r => requestAnimationFrame(r));
       ensureResultVisible(root);
 
-      // Save history (cloud)
+      // Save history (cloud) — null-safe supabase & gemini
       try{
         const { supa } = await import('../../services/supabase.service.js');
-        supa.setConfig(settings.get().supabase);
+        supa.setConfig(getSettingsSafe().supabase);
         await supa.restore();
         if (supa.user) {
+          const gem = getSettingsSafe().gemini || {};
           await supa.historyAdd({
             ts: nowIso(),
             instructor: instructorTemplate || '',
             text: mainText,
             output: out || '',
-            model: (settings.get().gemini?.model || 'gemini-1.5-pro'),
+            model: (gem.model || 'gemini-1.5-pro'),
             tone, audience
           });
           await refreshHistoryUI(root, historySearch?.value.trim() || '');
@@ -447,7 +490,4 @@ export async function init(root){
       setSubmitting(submitBtn, false);
     }
   });
-
-  // Hotkeys
-  attachHotkeys(root);
 }
