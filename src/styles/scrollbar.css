@@ -1,0 +1,36 @@
+:root{
+  --sb-size: 8px;
+  --sb-track: transparent;
+  --sb-thumb: #263348;
+  --sb-thumb-hover: #2f415a;
+  --sb-corner: transparent;
+}
+
+/* Firefox */
+*{
+  scrollbar-width: thin;
+  scrollbar-color: var(--sb-thumb) var(--sb-track);
+}
+
+/* Chromium/WebKit */
+::-webkit-scrollbar{
+  width: var(--sb-size);
+  height: var(--sb-size);
+}
+::-webkit-scrollbar-track{
+  background: var(--sb-track);
+}
+::-webkit-scrollbar-thumb{
+  background: var(--sb-thumb);
+  border-radius: 999px;
+  border: 2px solid transparent; /* tạo khoảng cách bên trong */
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover{
+  background: var(--sb-thumb-hover);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-corner{
+  background: var(--sb-corner);
+}

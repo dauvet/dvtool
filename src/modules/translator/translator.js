@@ -124,36 +124,46 @@ function updatePresetButtonStates(root, st){
 }
 
 function historyRow(h){
+  const time = new Date(h.ts).toLocaleString();
   return `
-    <div class="flex justify-between items-center p-2 rounded mb-2" style="border:1px solid #374151; min-width:0;">
-      <div style="min-width:0">
-        <div class="text-xs text-sub">${new Date(h.ts).toLocaleString()}</div>
-        <div class="summary clamp-2 text-xs"></div>
+    <div class="hist-item" data-id="${h.id}">
+      <div class="flex items-center justify-between mb-1" style="gap:10px;">
+        <div class="text-xs text-sub">${time}</div>
+        <div class="flex gap-2" style="flex:0 0 auto">
+          <button class="icon-btn sm btn-load" data-id="${h.id}" title="Load" aria-label="Load">
+            <svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M5 20h14v-2H5v2zM13 4h-2v8H8l4 4 4-4h-3V4z"/></svg>
+          </button>
+          <button class="icon-btn sm danger" data-id="${h.id}" data-role="delete" title="Delete" aria-label="Delete">
+            <svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M9 3v1H4v2h16V4h-5V3H9m1 6v9h2V9h-2m-4 0v9h2V9H6m8 0v9h2V9h-2z"/></svg>
+          </button>
+        </div>
       </div>
-      <div class="flex gap-2" style="flex:0 0 auto">
-        <button class="icon-btn sm btn-load" data-id="${h.id}" title="Load" aria-label="Load">
-          <svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M5 20h14v-2H5v2zM13 4h-2v8H8l4 4 4-4h-3V4z"/></svg>
-        </button>
-        <button class="icon-btn sm danger" data-id="${h.id}" data-role="delete" title="Delete" aria-label="Delete">
-          <svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M9 3v1H4v2h16V4h-5V3H9m1 6v9h2V9h-2m-4 0v9h2V9H6m8 0v9h2V9h-2z"/></svg>
-        </button>
-      </div>
+      <!-- Hiển thị markdown đầy đủ của output -->
+      <md-viewer class="hist-md"></md-viewer>
     </div>
   `;
 }
 
+
 function renderHistoryList(root, container, items){
   if(!container) return;
-  if(!items?.length){ container.innerHTML = '<small class="text-sub">No history yet.</small>'; return; }
+  if(!items?.length){
+    container.innerHTML = '<div class="p-3 text-sub text-sm">No history yet.</div>';
+    return;
+  }
+
   container.innerHTML = items.map(historyRow).join('');
 
-  const rows = Array.from(container.querySelectorAll('.summary'));
-  rows.forEach((el, i)=>{
-    const h = items[i];
-    el.textContent = stripTags(h.output || '');
-    el.title = el.textContent;
+  // Gán markdown cho từng item
+  const rows = Array.from(container.querySelectorAll('.hist-item'));
+  rows.forEach(row=>{
+    const id = row.getAttribute('data-id');
+    const h = items.find(x => x.id === id);
+    const viewer = row.querySelector('md-viewer.hist-md');
+    if (viewer) viewer.content = h?.output || '';
   });
 
+  // Nút Load
   container.querySelectorAll('.btn-load').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const id = btn.getAttribute('data-id');
@@ -163,30 +173,29 @@ function renderHistoryList(root, container, items){
       const outEl  = root.querySelector('#output');
       if (textEl) textEl.value = item.text || '';
       if (outEl)  outEl.content = item.output || '';
-      toast('Loaded from history.');
     });
   });
 
+  // Nút Delete (giữ nguyên logic cũ)
   container.querySelectorAll('button[data-role="delete"]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       const id = btn.getAttribute('data-id');
       try{
         const { supa } = await import('../../services/supabase.service.js');
-        const stSafe = getSettingsSafe();
-        supa.setConfig(stSafe.supabase);
+        const st = settings.get();
+        supa.setConfig(st.supabase);
         await supa.restore();
-        if(!supa.user){ toast('Please sign in to manage cloud history.'); return; }
+        if(!supa.user){ return; }
         await supa.historyDelete(id);
-        toast('Deleted.');
         const updated = await supa.historyList({ q: root.querySelector('#historySearch')?.value.trim() || '', limit: 50 });
-        const box = root.querySelector('#history');
-        renderHistoryList(root, box, updated);
+        renderHistoryList(root, container, updated);
       }catch(e){
-        console.error(e); toast('Delete failed.');
+        console.error(e);
       }
     });
   });
 }
+
 
 async function refreshHistoryUI(root, q=''){
   const { supa } = await import('../../services/supabase.service.js');

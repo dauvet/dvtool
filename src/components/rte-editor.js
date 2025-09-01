@@ -48,6 +48,8 @@ class RteEditor extends HTMLElement {
         word-break: break-word;
         overflow-wrap: anywhere;
         overflow-x: hidden;
+        height: 250px; 
+        overflow: auto;
       }
 
       /* Không cho phần tử con “nở” quá khung */

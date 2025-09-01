@@ -91,3 +91,15 @@ small{color:#9ca3af}
   box-shadow:0 6px 28px rgba(34,211,238,.12);
   border-radius:12px;
 }
+
+/* === Extension global min height === */
+:root{ --ext-min-h: 500px; }
+
+html, body{
+  min-height: var(--ext-min-h);
+  height: auto !important; /* ❌ gây hỏng layout cần height:100% */
+}
+
+#app, #root, .app, .page, .container{
+  min-height: var(--ext-min-h);
+}
